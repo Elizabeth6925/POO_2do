@@ -1,3 +1,5 @@
+//Clase Continente
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,89 +12,90 @@ public class Continente {
         this.paises = new ArrayList<>();
     }
 
-    public String getNombre() {
-        return nombre;
-    }
-
-    public List<Pais> getPaises() {
-        return paises;
-    }
-
     public void agregarPais(Pais pais) {
         paises.add(pais);
+        pais.setContinente(this); // vincula la referencia inversa automáticamente
     }
+
+    public String getNombre()     { return nombre; }
+    public List<Pais> getPaises() { return paises; }
 
     @Override
     public String toString() {
-        return "Continente: " + nombre;
+        return "Continente: " + nombre + " (" + paises.size() + " países)";
     }
 }
 
-
-
+//Clase Provincia
 
 public class Provincia {
     private String nombre;
-    private int habitantes;
 
-    public Provincia(String nombre, int habitantes) {
+    public Provincia(String nombre) {
         this.nombre = nombre;
-        this.habitantes = habitantes;
     }
 
     public String getNombre() {
         return nombre;
     }
 
-    public int getHabitantes() {
-        return habitantes;
-    }
-
     @Override
     public String toString() {
-        return nombre + " - Habitantes: " + habitantes;
+        return "  Provincia: " + nombre;
     }
 }
 
-
+//Clase País
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Pais {
     private String nombre;
+    private String capital;
     private double superficie;
+    private Continente continente;
     private List<Provincia> provincias;
+    private List<Pais> limitrofes;
 
-    public Pais(String nombre, double superficie) {
+    public Pais(String nombre, String capital, double superficie) {
         this.nombre = nombre;
+        this.capital = capital;
         this.superficie = superficie;
         this.provincias = new ArrayList<>();
+        this.limitrofes = new ArrayList<>();
     }
 
-    public String getNombre() {
-        return nombre;
+    public void agregarProvincia(Provincia p) {
+        provincias.add(p);
     }
 
-    public double getSuperficie() {
-        return superficie;
+    public void agregarLimitrofe(Pais p) {
+        if (!limitrofes.contains(p) && !p.equals(this)) {
+            limitrofes.add(p);
+        }
     }
 
-    public List<Provincia> getProvincias() {
-        return provincias;
-    }
+    public String getNombre()              { return nombre; }
+    public String getCapital()             { return capital; }
+    public double getSuperficie()          { return superficie; }
+    public Continente getContinente()      { return continente; }
+    public List<Provincia> getProvincias() { return provincias; }
+    public List<Pais> getLimitrofes()      { return limitrofes; }
 
-    public void agregarProvincia(Provincia provincia) {
-        provincias.add(provincia);
+    public void setContinente(Continente continente) {
+        this.continente = continente;
     }
 
     @Override
     public String toString() {
-        return nombre + " - Superficie: " + superficie;
+        String nomContinente = (continente != null) ? continente.getNombre() : "Sin continente";
+        return String.format("  Pais: %-20s | Capital: %-18s | Superficie: %,10.0f km² | Continente: %s",
+                nombre, capital, superficie, nomContinente);
     }
 }
 
-
+//Clase de Gestión(Seeder y Lógica)
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -103,71 +106,525 @@ public class Gestion {
 
     public Gestion() {
         continentes = new ArrayList<>();
+        inicializarDatos();
     }
 
-    // Seeder (datos de prueba)
-    public void cargarDatos() {
+    // ══════════════════════════════════════════
+    //         SEEDER - CARGA DE DATOS
+    // ══════════════════════════════════════════
+    private void inicializarDatos() {
+
         Continente america = new Continente("América");
 
-        Pais argentina = new Pais("Argentina", 2780000);
-        argentina.agregarProvincia(new Provincia("Entre Ríos", 1300000));
-        argentina.agregarProvincia(new Provincia("Buenos Aires", 17000000));
+        // ── América del Sur ──
+        Pais argentina = new Pais("Argentina", "Buenos Aires", 2780400);
+        argentina.agregarProvincia(new Provincia("Buenos Aires"));
+        argentina.agregarProvincia(new Provincia("Córdoba"));
+        argentina.agregarProvincia(new Provincia("Santa Fe"));
+        argentina.agregarProvincia(new Provincia("Mendoza"));
+        argentina.agregarProvincia(new Provincia("Entre Ríos"));
+        argentina.agregarProvincia(new Provincia("Tucumán"));
+        argentina.agregarProvincia(new Provincia("Salta"));
+        argentina.agregarProvincia(new Provincia("Chaco"));
+        argentina.agregarProvincia(new Provincia("Corrientes"));
+        argentina.agregarProvincia(new Provincia("Misiones"));
 
-        Pais brasil = new Pais("Brasil", 8516000);
-        brasil.agregarProvincia(new Provincia("São Paulo", 45000000));
+        Pais brasil = new Pais("Brasil", "Brasilia", 8515767);
+        brasil.agregarProvincia(new Provincia("São Paulo"));
+        brasil.agregarProvincia(new Provincia("Minas Gerais"));
+        brasil.agregarProvincia(new Provincia("Rio de Janeiro"));
+        brasil.agregarProvincia(new Provincia("Bahia"));
+        brasil.agregarProvincia(new Provincia("Paraná"));
+        brasil.agregarProvincia(new Provincia("Rio Grande do Sul"));
+        brasil.agregarProvincia(new Provincia("Pará"));
+        brasil.agregarProvincia(new Provincia("Amazonas"));
 
-        america.agregarPais(argentina);
-        america.agregarPais(brasil);
+        Pais chile = new Pais("Chile", "Santiago", 756102);
+        chile.agregarProvincia(new Provincia("Metropolitana"));
+        chile.agregarProvincia(new Provincia("Valparaíso"));
+        chile.agregarProvincia(new Provincia("Biobío"));
+        chile.agregarProvincia(new Provincia("Araucanía"));
+        chile.agregarProvincia(new Provincia("Los Lagos"));
+
+        Pais uruguay = new Pais("Uruguay", "Montevideo", 176215);
+        uruguay.agregarProvincia(new Provincia("Montevideo"));
+        uruguay.agregarProvincia(new Provincia("Canelones"));
+        uruguay.agregarProvincia(new Provincia("Maldonado"));
+        uruguay.agregarProvincia(new Provincia("Salto"));
+
+        Pais paraguay = new Pais("Paraguay", "Asunción", 406752);
+        paraguay.agregarProvincia(new Provincia("Central"));
+        paraguay.agregarProvincia(new Provincia("Alto Paraná"));
+        paraguay.agregarProvincia(new Provincia("Itapúa"));
+        paraguay.agregarProvincia(new Provincia("Caaguazú"));
+
+        Pais bolivia = new Pais("Bolivia", "Sucre", 1098581);
+        bolivia.agregarProvincia(new Provincia("Santa Cruz"));
+        bolivia.agregarProvincia(new Provincia("La Paz"));
+        bolivia.agregarProvincia(new Provincia("Cochabamba"));
+        bolivia.agregarProvincia(new Provincia("Potosí"));
+
+        Pais peru = new Pais("Perú", "Lima", 1285216);
+        peru.agregarProvincia(new Provincia("Lima"));
+        peru.agregarProvincia(new Provincia("Arequipa"));
+        peru.agregarProvincia(new Provincia("Cusco"));
+        peru.agregarProvincia(new Provincia("La Libertad"));
+        peru.agregarProvincia(new Provincia("Puno"));
+
+        Pais colombia = new Pais("Colombia", "Bogotá", 1141748);
+        colombia.agregarProvincia(new Provincia("Cundinamarca"));
+        colombia.agregarProvincia(new Provincia("Antioquia"));
+        colombia.agregarProvincia(new Provincia("Valle del Cauca"));
+        colombia.agregarProvincia(new Provincia("Atlántico"));
+
+        Pais venezuela = new Pais("Venezuela", "Caracas", 916445);
+        venezuela.agregarProvincia(new Provincia("Miranda"));
+        venezuela.agregarProvincia(new Provincia("Zulia"));
+        venezuela.agregarProvincia(new Provincia("Carabobo"));
+        venezuela.agregarProvincia(new Provincia("Bolívar"));
+
+        Pais ecuador = new Pais("Ecuador", "Quito", 283561);
+        ecuador.agregarProvincia(new Provincia("Pichincha"));
+        ecuador.agregarProvincia(new Provincia("Guayas"));
+        ecuador.agregarProvincia(new Provincia("Azuay"));
+
+        Pais guyana = new Pais("Guyana", "Georgetown", 214969);
+        guyana.agregarProvincia(new Provincia("Demerara-Mahaica"));
+        guyana.agregarProvincia(new Provincia("Upper Demerara"));
+
+        Pais surinam = new Pais("Surinam", "Paramaribo", 163820);
+        surinam.agregarProvincia(new Provincia("Paramaribo"));
+        surinam.agregarProvincia(new Provincia("Wanica"));
+
+        // ── América del Norte ──
+        Pais mexico = new Pais("México", "Ciudad de México", 1964375);
+        mexico.agregarProvincia(new Provincia("Ciudad de México"));
+        mexico.agregarProvincia(new Provincia("Jalisco"));
+        mexico.agregarProvincia(new Provincia("Nuevo León"));
+        mexico.agregarProvincia(new Provincia("Veracruz"));
+        mexico.agregarProvincia(new Provincia("Puebla"));
+        mexico.agregarProvincia(new Provincia("Guanajuato"));
+        mexico.agregarProvincia(new Provincia("Chihuahua"));
+
+        Pais estadosUnidos = new Pais("Estados Unidos", "Washington D.C.", 9833517);
+        estadosUnidos.agregarProvincia(new Provincia("California"));
+        estadosUnidos.agregarProvincia(new Provincia("Texas"));
+        estadosUnidos.agregarProvincia(new Provincia("Florida"));
+        estadosUnidos.agregarProvincia(new Provincia("Nueva York"));
+        estadosUnidos.agregarProvincia(new Provincia("Illinois"));
+        estadosUnidos.agregarProvincia(new Provincia("Pennsylvania"));
+        estadosUnidos.agregarProvincia(new Provincia("Ohio"));
+
+        Pais canada = new Pais("Canadá", "Ottawa", 9984670);
+        canada.agregarProvincia(new Provincia("Ontario"));
+        canada.agregarProvincia(new Provincia("Quebec"));
+        canada.agregarProvincia(new Provincia("Columbia Británica"));
+        canada.agregarProvincia(new Provincia("Alberta"));
+        canada.agregarProvincia(new Provincia("Manitoba"));
+
+        // ── América Central ──
+        Pais guatemala = new Pais("Guatemala", "Guatemala", 108889);
+        guatemala.agregarProvincia(new Provincia("Guatemala"));
+        guatemala.agregarProvincia(new Provincia("Alta Verapaz"));
+        guatemala.agregarProvincia(new Provincia("Huehuetenango"));
+
+        Pais honduras = new Pais("Honduras", "Tegucigalpa", 112492);
+        honduras.agregarProvincia(new Provincia("Francisco Morazán"));
+        honduras.agregarProvincia(new Provincia("Cortés"));
+        honduras.agregarProvincia(new Provincia("Olancho"));
+
+        Pais elSalvador = new Pais("El Salvador", "San Salvador", 21041);
+        elSalvador.agregarProvincia(new Provincia("San Salvador"));
+        elSalvador.agregarProvincia(new Provincia("Santa Ana"));
+
+        Pais nicaragua = new Pais("Nicaragua", "Managua", 130373);
+        nicaragua.agregarProvincia(new Provincia("Managua"));
+        nicaragua.agregarProvincia(new Provincia("Matagalpa"));
+
+        Pais costaRica = new Pais("Costa Rica", "San José", 51100);
+        costaRica.agregarProvincia(new Provincia("San José"));
+        costaRica.agregarProvincia(new Provincia("Alajuela"));
+
+        Pais panama = new Pais("Panamá", "Ciudad de Panamá", 75417);
+        panama.agregarProvincia(new Provincia("Panamá"));
+        panama.agregarProvincia(new Provincia("Colón"));
+
+        Pais cuba = new Pais("Cuba", "La Habana", 109884);
+        cuba.agregarProvincia(new Provincia("La Habana"));
+        cuba.agregarProvincia(new Provincia("Santiago de Cuba"));
+        cuba.agregarProvincia(new Provincia("Holguín"));
+
+        Pais repDominicana = new Pais("República Dominicana", "Santo Domingo", 48671);
+        repDominicana.agregarProvincia(new Provincia("Distrito Nacional"));
+        repDominicana.agregarProvincia(new Provincia("Santiago"));
+
+        // Agregar a América
+        america.agregarPais(argentina);   america.agregarPais(brasil);
+        america.agregarPais(chile);       america.agregarPais(uruguay);
+        america.agregarPais(paraguay);    america.agregarPais(bolivia);
+        america.agregarPais(peru);        america.agregarPais(colombia);
+        america.agregarPais(venezuela);   america.agregarPais(ecuador);
+        america.agregarPais(guyana);      america.agregarPais(surinam);
+        america.agregarPais(mexico);      america.agregarPais(estadosUnidos);
+        america.agregarPais(canada);      america.agregarPais(guatemala);
+        america.agregarPais(honduras);    america.agregarPais(elSalvador);
+        america.agregarPais(nicaragua);   america.agregarPais(costaRica);
+        america.agregarPais(panama);      america.agregarPais(cuba);
+        america.agregarPais(repDominicana);
+
+        // Limítrofes América
+        argentina.agregarLimitrofe(chile);       chile.agregarLimitrofe(argentina);
+        argentina.agregarLimitrofe(brasil);      brasil.agregarLimitrofe(argentina);
+        argentina.agregarLimitrofe(uruguay);     uruguay.agregarLimitrofe(argentina);
+        argentina.agregarLimitrofe(paraguay);    paraguay.agregarLimitrofe(argentina);
+        argentina.agregarLimitrofe(bolivia);     bolivia.agregarLimitrofe(argentina);
+        brasil.agregarLimitrofe(uruguay);        uruguay.agregarLimitrofe(brasil);
+        brasil.agregarLimitrofe(paraguay);       paraguay.agregarLimitrofe(brasil);
+        brasil.agregarLimitrofe(bolivia);        bolivia.agregarLimitrofe(brasil);
+        brasil.agregarLimitrofe(peru);           peru.agregarLimitrofe(brasil);
+        brasil.agregarLimitrofe(colombia);       colombia.agregarLimitrofe(brasil);
+        brasil.agregarLimitrofe(venezuela);      venezuela.agregarLimitrofe(brasil);
+        brasil.agregarLimitrofe(guyana);         guyana.agregarLimitrofe(brasil);
+        brasil.agregarLimitrofe(surinam);        surinam.agregarLimitrofe(brasil);
+        bolivia.agregarLimitrofe(peru);          peru.agregarLimitrofe(bolivia);
+        bolivia.agregarLimitrofe(chile);         chile.agregarLimitrofe(bolivia);
+        bolivia.agregarLimitrofe(paraguay);
+        peru.agregarLimitrofe(colombia);         colombia.agregarLimitrofe(peru);
+        peru.agregarLimitrofe(ecuador);          ecuador.agregarLimitrofe(peru);
+        colombia.agregarLimitrofe(venezuela);    venezuela.agregarLimitrofe(colombia);
+        colombia.agregarLimitrofe(ecuador);      ecuador.agregarLimitrofe(colombia);
+        colombia.agregarLimitrofe(panama);       panama.agregarLimitrofe(colombia);
+        venezuela.agregarLimitrofe(guyana);      guyana.agregarLimitrofe(venezuela);
+        guyana.agregarLimitrofe(surinam);        surinam.agregarLimitrofe(guyana);
+        estadosUnidos.agregarLimitrofe(canada);  canada.agregarLimitrofe(estadosUnidos);
+        estadosUnidos.agregarLimitrofe(mexico);  mexico.agregarLimitrofe(estadosUnidos);
+        mexico.agregarLimitrofe(guatemala);      guatemala.agregarLimitrofe(mexico);
+        guatemala.agregarLimitrofe(honduras);    honduras.agregarLimitrofe(guatemala);
+        guatemala.agregarLimitrofe(elSalvador);  elSalvador.agregarLimitrofe(guatemala);
+        honduras.agregarLimitrofe(elSalvador);   elSalvador.agregarLimitrofe(honduras);
+        honduras.agregarLimitrofe(nicaragua);    nicaragua.agregarLimitrofe(honduras);
+        nicaragua.agregarLimitrofe(costaRica);   costaRica.agregarLimitrofe(nicaragua);
+        costaRica.agregarLimitrofe(panama);      panama.agregarLimitrofe(costaRica);
 
         continentes.add(america);
+
+        // ══════════════════════════════════════════
+        //               EUROPA
+        // ══════════════════════════════════════════
+        Continente europa = new Continente("Europa");
+
+        Pais alemania = new Pais("Alemania", "Berlín", 357114);
+        alemania.agregarProvincia(new Provincia("Baviera"));
+        alemania.agregarProvincia(new Provincia("Renania del Norte-Westfalia"));
+        alemania.agregarProvincia(new Provincia("Baden-Württemberg"));
+        alemania.agregarProvincia(new Provincia("Baja Sajonia"));
+        alemania.agregarProvincia(new Provincia("Berlín"));
+
+        Pais francia = new Pais("Francia", "París", 551695);
+        francia.agregarProvincia(new Provincia("Isla de Francia"));
+        francia.agregarProvincia(new Provincia("Auvernia-Ródano-Alpes"));
+        francia.agregarProvincia(new Provincia("Nueva Aquitania"));
+        francia.agregarProvincia(new Provincia("Occitania"));
+        francia.agregarProvincia(new Provincia("Provenza-Alpes-Costa Azul"));
+
+        Pais espania = new Pais("España", "Madrid", 505990);
+        espania.agregarProvincia(new Provincia("Madrid"));
+        espania.agregarProvincia(new Provincia("Cataluña"));
+        espania.agregarProvincia(new Provincia("Andalucía"));
+        espania.agregarProvincia(new Provincia("Valencia"));
+        espania.agregarProvincia(new Provincia("País Vasco"));
+        espania.agregarProvincia(new Provincia("Galicia"));
+
+        Pais italia = new Pais("Italia", "Roma", 301340);
+        italia.agregarProvincia(new Provincia("Lombardía"));
+        italia.agregarProvincia(new Provincia("Lacio"));
+        italia.agregarProvincia(new Provincia("Campania"));
+        italia.agregarProvincia(new Provincia("Véneto"));
+        italia.agregarProvincia(new Provincia("Sicilia"));
+
+        Pais reinoUnido = new Pais("Reino Unido", "Londres", 243610);
+        reinoUnido.agregarProvincia(new Provincia("Inglaterra"));
+        reinoUnido.agregarProvincia(new Provincia("Escocia"));
+        reinoUnido.agregarProvincia(new Provincia("Gales"));
+        reinoUnido.agregarProvincia(new Provincia("Irlanda del Norte"));
+
+        Pais portugal = new Pais("Portugal", "Lisboa", 92212);
+        portugal.agregarProvincia(new Provincia("Lisboa"));
+        portugal.agregarProvincia(new Provincia("Oporto"));
+        portugal.agregarProvincia(new Provincia("Braga"));
+
+        Pais paisesbajos = new Pais("Países Bajos", "Ámsterdam", 41543);
+        paisesbajos.agregarProvincia(new Provincia("Holanda del Norte"));
+        paisesbajos.agregarProvincia(new Provincia("Holanda del Sur"));
+        paisesbajos.agregarProvincia(new Provincia("Utrecht"));
+
+        Pais belgica = new Pais("Bélgica", "Bruselas", 30528);
+        belgica.agregarProvincia(new Provincia("Brabante Valón"));
+        belgica.agregarProvincia(new Provincia("Amberes"));
+        belgica.agregarProvincia(new Provincia("Gante"));
+
+        Pais suiza = new Pais("Suiza", "Berna", 41285);
+        suiza.agregarProvincia(new Provincia("Zúrich"));
+        suiza.agregarProvincia(new Provincia("Berna"));
+        suiza.agregarProvincia(new Provincia("Ginebra"));
+
+        Pais austria = new Pais("Austria", "Viena", 83871);
+        austria.agregarProvincia(new Provincia("Viena"));
+        austria.agregarProvincia(new Provincia("Alta Austria"));
+        austria.agregarProvincia(new Provincia("Baja Austria"));
+
+        Pais polonia = new Pais("Polonia", "Varsovia", 312696);
+        polonia.agregarProvincia(new Provincia("Mazovia"));
+        polonia.agregarProvincia(new Provincia("Silesia"));
+        polonia.agregarProvincia(new Provincia("Gran Polonia"));
+
+        Pais rumania = new Pais("Rumanía", "Bucarest", 238397);
+        rumania.agregarProvincia(new Provincia("Bucarest"));
+        rumania.agregarProvincia(new Provincia("Cluj"));
+        rumania.agregarProvincia(new Provincia("Timis"));
+
+        Pais republica_checa = new Pais("República Checa", "Praga", 78866);
+        republica_checa.agregarProvincia(new Provincia("Bohemia Central"));
+        republica_checa.agregarProvincia(new Provincia("Moravia del Sur"));
+
+        Pais hungria = new Pais("Hungría", "Budapest", 93028);
+        hungria.agregarProvincia(new Provincia("Budapest"));
+        hungria.agregarProvincia(new Provincia("Hajdú-Bihar"));
+
+        Pais suecia = new Pais("Suecia", "Estocolmo", 450295);
+        suecia.agregarProvincia(new Provincia("Estocolmo"));
+        suecia.agregarProvincia(new Provincia("Västra Götaland"));
+        suecia.agregarProvincia(new Provincia("Skåne"));
+
+        Pais noruega = new Pais("Noruega", "Oslo", 385207);
+        noruega.agregarProvincia(new Provincia("Oslo"));
+        noruega.agregarProvincia(new Provincia("Viken"));
+        noruega.agregarProvincia(new Provincia("Innlandet"));
+
+        Pais dinamarca = new Pais("Dinamarca", "Copenhague", 42924);
+        dinamarca.agregarProvincia(new Provincia("Zelanda"));
+        dinamarca.agregarProvincia(new Provincia("Jutlandia Central"));
+
+        Pais finlandia = new Pais("Finlandia", "Helsinki", 338145);
+        finlandia.agregarProvincia(new Provincia("Finlandia Meridional"));
+        finlandia.agregarProvincia(new Provincia("Finlandia Occidental"));
+
+        Pais grecia = new Pais("Grecia", "Atenas", 131957);
+        grecia.agregarProvincia(new Provincia("Ática"));
+        grecia.agregarProvincia(new Provincia("Macedonia Central"));
+        grecia.agregarProvincia(new Provincia("Tesalia"));
+
+        Pais rusia = new Pais("Rusia", "Moscú", 17098246);
+        rusia.agregarProvincia(new Provincia("Moscú"));
+        rusia.agregarProvincia(new Provincia("San Petersburgo"));
+        rusia.agregarProvincia(new Provincia("Krasnodar"));
+        rusia.agregarProvincia(new Provincia("Sverdlovsk"));
+
+        Pais ucrania = new Pais("Ucrania", "Kiev", 603550);
+        ucrania.agregarProvincia(new Provincia("Kiev"));
+        ucrania.agregarProvincia(new Provincia("Járkov"));
+        ucrania.agregarProvincia(new Provincia("Dnipropetrovsk"));
+
+        Pais serbia = new Pais("Serbia", "Belgrado", 77474);
+        serbia.agregarProvincia(new Provincia("Belgrado"));
+        serbia.agregarProvincia(new Provincia("Vojvodina"));
+
+        Pais croacia = new Pais("Croacia", "Zagreb", 56594);
+        croacia.agregarProvincia(new Provincia("Zagreb"));
+        croacia.agregarProvincia(new Provincia("Split-Dalmacia"));
+
+        // Agregar a Europa
+        europa.agregarPais(alemania);     europa.agregarPais(francia);
+        europa.agregarPais(espania);      europa.agregarPais(italia);
+        europa.agregarPais(reinoUnido);   europa.agregarPais(portugal);
+        europa.agregarPais(paisesbajos);  europa.agregarPais(belgica);
+        europa.agregarPais(suiza);        europa.agregarPais(austria);
+        europa.agregarPais(polonia);      europa.agregarPais(rumania);
+        europa.agregarPais(republica_checa); europa.agregarPais(hungria);
+        europa.agregarPais(suecia);       europa.agregarPais(noruega);
+        europa.agregarPais(dinamarca);    europa.agregarPais(finlandia);
+        europa.agregarPais(grecia);       europa.agregarPais(rusia);
+        europa.agregarPais(ucrania);      europa.agregarPais(serbia);
+        europa.agregarPais(croacia);
+
+        // Limítrofes Europa
+        alemania.agregarLimitrofe(francia);         francia.agregarLimitrofe(alemania);
+        alemania.agregarLimitrofe(polonia);         polonia.agregarLimitrofe(alemania);
+        alemania.agregarLimitrofe(republica_checa); republica_checa.agregarLimitrofe(alemania);
+        alemania.agregarLimitrofe(austria);         austria.agregarLimitrofe(alemania);
+        alemania.agregarLimitrofe(suiza);           suiza.agregarLimitrofe(alemania);
+        alemania.agregarLimitrofe(paisesbajos);     paisesbajos.agregarLimitrofe(alemania);
+        alemania.agregarLimitrofe(belgica);         belgica.agregarLimitrofe(alemania);
+        alemania.agregarLimitrofe(dinamarca);       dinamarca.agregarLimitrofe(alemania);
+        francia.agregarLimitrofe(espania);          espania.agregarLimitrofe(francia);
+        francia.agregarLimitrofe(italia);           italia.agregarLimitrofe(francia);
+        francia.agregarLimitrofe(suiza);
+        francia.agregarLimitrofe(belgica);
+        espania.agregarLimitrofe(portugal);         portugal.agregarLimitrofe(espania);
+        italia.agregarLimitrofe(austria);
+        italia.agregarLimitrofe(suiza);
+        austria.agregarLimitrofe(hungria);          hungria.agregarLimitrofe(austria);
+        austria.agregarLimitrofe(republica_checa);
+        austria.agregarLimitrofe(suiza);
+        polonia.agregarLimitrofe(republica_checa);
+        polonia.agregarLimitrofe(ucrania);          ucrania.agregarLimitrofe(polonia);
+        rumania.agregarLimitrofe(hungria);          hungria.agregarLimitrofe(rumania);
+        rumania.agregarLimitrofe(ucrania);
+        rumania.agregarLimitrofe(serbia);           serbia.agregarLimitrofe(rumania);
+        ucrania.agregarLimitrofe(rusia);            rusia.agregarLimitrofe(ucrania);
+        serbia.agregarLimitrofe(hungria);
+        serbia.agregarLimitrofe(croacia);           croacia.agregarLimitrofe(serbia);
+        suecia.agregarLimitrofe(noruega);           noruega.agregarLimitrofe(suecia);
+        suecia.agregarLimitrofe(finlandia);         finlandia.agregarLimitrofe(suecia);
+        noruega.agregarLimitrofe(finlandia);
+        noruega.agregarLimitrofe(rusia);
+        finlandia.agregarLimitrofe(rusia);
+        paisesbajos.agregarLimitrofe(belgica);
+
+        continentes.add(europa);
     }
 
-    // Listar países por continente
-    public void listarPaises() {
-        for (Continente c : continentes) {
-            System.out.println(c);
-            for (Pais p : c.getPaises()) {
-                System.out.println("  - " + p);
-            }
-        }
+    // ══════════════════════════════════════════
+    //              LÓGICA / MENÚ
+    // ══════════════════════════════════════════
+    private Pais buscarPais(String nombre) {
+        for (Continente c : continentes)
+            for (Pais p : c.getPaises())
+                if (p.getNombre().equalsIgnoreCase(nombre)) return p;
+        return null;
     }
 
-    // Listar provincias por país
-    public void listarProvincias(String nombrePais) {
-        for (Continente c : continentes) {
-            for (Pais p : c.getPaises()) {
-                if (p.getNombre().equalsIgnoreCase(nombrePais)) {
-                    System.out.println("Provincias de " + p.getNombre());
-                    for (Provincia pr : p.getProvincias()) {
-                        System.out.println("  - " + pr);
-                    }
-                }
-            }
-        }
+    private Continente buscarContinente(String nombre) {
+        for (Continente c : continentes)
+            if (c.getNombre().equalsIgnoreCase(nombre)) return c;
+        return null;
     }
 
-    // Ordenar países por superficie
-    public void ordenarPaisesPorSuperficie() {
-        for (Continente c : continentes) {
-            c.getPaises().sort(Comparator.comparingDouble(Pais::getSuperficie));
-        }
+    public void listarPaisesDeContinente(String nombreContinente) {
+        Continente c = buscarContinente(nombreContinente);
+        if (c == null) { System.out.println("  No se encontró: " + nombreContinente); return; }
+        System.out.println("\n" + c);
+        System.out.println("  " + "─".repeat(90));
+        for (Pais p : c.getPaises()) System.out.println(p);
+    }
+
+    public void listarProvinciasDeUnPais(String nombrePais) {
+        Pais p = buscarPais(nombrePais);
+        if (p == null) { System.out.println("  No se encontró: " + nombrePais); return; }
+        System.out.println("\n  Provincias de " + p.getNombre() + " (" + p.getCapital() + "):");
+        System.out.println("  " + "─".repeat(40));
+        for (Provincia pr : p.getProvincias()) System.out.println(pr);
+    }
+
+    public void listarLimitrofes(String nombrePais) {
+        Pais p = buscarPais(nombrePais);
+        if (p == null) { System.out.println("  No se encontró: " + nombrePais); return; }
+        System.out.println("\n  Limítrofes de " + p.getNombre() + ":");
+        System.out.println("  " + "─".repeat(40));
+        if (p.getLimitrofes().isEmpty()) { System.out.println("  Sin limítrofes registrados."); return; }
+        for (Pais lim : p.getLimitrofes())
+            System.out.println("  → " + lim.getNombre() + " (Capital: " + lim.getCapital() + ")");
+    }
+
+    public void listarTodosPaisesPorSuperficie() {
+        List<Pais> todos = new ArrayList<>();
+        for (Continente c : continentes) todos.addAll(c.getPaises());
+        todos.sort(Comparator.comparingDouble(Pais::getSuperficie).reversed());
+        System.out.println("\n  Países ordenados por superficie (mayor a menor):");
+        System.out.println("  " + "─".repeat(90));
+        int i = 1;
+        for (Pais p : todos) System.out.printf("  %2d. %s%n", i++, p);
+    }
+
+    public void compararPaises(String nombre1, String nombre2) {
+        Pais p1 = buscarPais(nombre1);
+        Pais p2 = buscarPais(nombre2);
+        if (p1 == null) { System.out.println("  No se encontró: " + nombre1); return; }
+        if (p2 == null) { System.out.println("  No se encontró: " + nombre2); return; }
+        System.out.println("\n  Comparación:");
+        System.out.println("  " + "─".repeat(50));
+        System.out.printf("  %-20s → %,10.0f km²%n", p1.getNombre(), p1.getSuperficie());
+        System.out.printf("  %-20s → %,10.0f km²%n", p2.getNombre(), p2.getSuperficie());
+        System.out.println("  " + "─".repeat(50));
+        if (p1.getSuperficie() > p2.getSuperficie())
+            System.out.printf(" %s tiene mayor superficie.%n", p1.getNombre());
+        else if (p2.getSuperficie() > p1.getSuperficie())
+            System.out.printf(" %s tiene mayor superficie.%n", p2.getNombre());
+        else
+            System.out.println("  Ambos tienen la misma superficie.");
     }
 }
+
+
+
+//Clase Main
+
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        Gestion gestion = new Gestion();
+        Gestion gestion = new Gestion(); // carga los datos automáticamente
+        Scanner sc = new Scanner(System.in);
+        int opcion = 0;
 
-        gestion.cargarDatos();
+        System.out.println("╔══════════════════════════════════════╗");
+        System.out.println("║        MAPA MUNDIAL - SISTEMA        ║");
+        System.out.println("╚══════════════════════════════════════╝");
 
-        System.out.println("=== Países ===");
-        gestion.listarPaises();
+        do {
+            System.out.println();
+            System.out.println("  ┌─────────────────────────────────────┐");
+            System.out.println("  │              MENÚ PRINCIPAL         │");
+            System.out.println("  ├─────────────────────────────────────┤");
+            System.out.println("  │  1. Listar países de un continente  │");
+            System.out.println("  │  2. Listar provincias de un país    │");
+            System.out.println("  │  3. Listar limítrofes de un país    │");
+            System.out.println("  │  4. Países ordenados por superficie │");
+            System.out.println("  │  5. Comparar 2 países               │");
+            System.out.println("  │  0. Salir                           │");
+            System.out.println("  └─────────────────────────────────────┘");
+            System.out.print("  Ingrese una opción: ");
 
-        System.out.println("\n=== Provincias de Argentina ===");
-        gestion.listarProvincias("Argentina");
+            try {
+                opcion = Integer.parseInt(sc.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println("  Opción inválida.");
+                continue;
+            }
 
-        System.out.println("\n=== Países ordenados por superficie ===");
-        gestion.ordenarPaisesPorSuperficie();
-        gestion.listarPaises();
+            switch (opcion) {
+                case 1:
+                    System.out.print("  Continente (América / Europa): ");
+                    gestion.listarPaisesDeContinente(sc.nextLine().trim());
+                    break;
+                case 2:
+                    System.out.print("  Nombre del país: ");
+                    gestion.listarProvinciasDeUnPais(sc.nextLine().trim());
+                    break;
+                case 3:
+                    System.out.print("  Nombre del país: ");
+                    gestion.listarLimitrofes(sc.nextLine().trim());
+                    break;
+                case 4:
+                    gestion.listarTodosPaisesPorSuperficie();
+                    break;
+                case 5:
+                    System.out.print("  Primer país: ");
+                    String p1 = sc.nextLine().trim();
+                    System.out.print("  Segundo país: ");
+                    String p2 = sc.nextLine().trim();
+                    gestion.compararPaises(p1, p2);
+                    break;
+                case 0:
+                    System.out.println("\n  ¡Hasta luego!");
+                    break;
+                default:
+                    System.out.println("  Opción inválida. Elija entre 0 y 5.");
+            }
+        } while (opcion != 0);
+
+        sc.close();
     }
 }
+
+
