@@ -1,1 +1,233 @@
+import java.util.*;
 
+// ==========================================
+// 1. Producto
+// ==========================================
+class Producto {
+    private String nombre;
+    private double precioBase;
+    private double porcentajeIva;
+    private String categoria;
+
+    public Producto(String nombre, double precioBase, double porcentajeIva, String categoria) {
+        this.nombre = nombre;
+        this.precioBase = precioBase;
+        this.porcentajeIva = porcentajeIva;
+        this.categoria = categoria;
+    }
+
+    public String getNombre() { return nombre; }
+    public double getPrecioBase() { return precioBase; }
+    public double getPorcentajeIva() { return porcentajeIva; }
+    public String getCategoria() { return categoria; }
+}
+
+// ==========================================
+// 2. DescuentoLinea (Strategy + Null Object)
+// ==========================================
+interface DescuentoLinea {
+    double calcular(int cantidad, double precioUnitario);
+}
+
+class SinDescuentoLinea implements DescuentoLinea {
+    @Override
+    public double calcular(int cantidad, double precioUnitario) {
+        return 0.0;
+    }
+}
+
+class Descuento3x2 implements DescuentoLinea {
+    @Override
+    public double calcular(int cantidad, double precioUnitario) {
+        int unidadesGratis = cantidad / 3;
+        return unidadesGratis * precioUnitario;
+    }
+}
+
+// ==========================================
+// 3. LineaFactura
+// ==========================================
+class LineaFactura {
+    private int cantidad;
+    private double precioUnitarioHistorico;
+    private double porcentajeIvaHistorico;
+    private String categoriaHistorica;
+    private String nombreProductoHistorico;
+    private DescuentoLinea descuentoLinea;
+
+    public LineaFactura(Producto producto, int cantidad, DescuentoLinea descuentoLinea) {
+        this.cantidad = cantidad;
+        this.precioUnitarioHistorico = producto.getPrecioBase();
+        this.porcentajeIvaHistorico = producto.getPorcentajeIva();
+        this.categoriaHistorica = producto.getCategoria();
+        this.nombreProductoHistorico = producto.getNombre();
+        this.descuentoLinea = (descuentoLinea != null) ? descuentoLinea : new SinDescuentoLinea();
+    }
+
+    public double calcularSubtotalBruto() {
+        return cantidad * precioUnitarioHistorico;
+    }
+
+    public double calcularDescuentoLinea() {
+        return descuentoLinea.calcular(cantidad, precioUnitarioHistorico);
+    }
+
+    public double calcularSubtotalTrasDescuentoLinea() {
+        return calcularSubtotalBruto() - calcularDescuentoLinea();
+    }
+
+    public double calcularSubtotalNetoFinal(double porcentajeGlobal) {
+        double descuentoGlobal = calcularSubtotalTrasDescuentoLinea() * porcentajeGlobal;
+        return calcularSubtotalTrasDescuentoLinea() - descuentoGlobal;
+    }
+
+    public double calcularMontoIva(double porcentajeGlobal) {
+        return calcularSubtotalNetoFinal(porcentajeGlobal) * porcentajeIvaHistorico;
+    }
+
+    public int getCantidad() { return cantidad; }
+    public String getNombreProductoHistorico() { return nombreProductoHistorico; }
+    public String getCategoriaHistorica() { return categoriaHistorica; }
+    public double getPorcentajeIvaHistorico() { return porcentajeIvaHistorico; }
+}
+
+// ==========================================
+// 4. GRASP Polimorfismo: Descuento Global
+// ==========================================
+interface Descuento {
+    double obtenerPorcentajeParaLinea(LineaFactura linea, List<LineaFactura> todasLasLineas);
+}
+
+class DescuentoNulo implements Descuento {
+    @Override
+    public double obtenerPorcentajeParaLinea(LineaFactura linea, List<LineaFactura> todasLasLineas) {
+        return 0.0;
+    }
+}
+
+class DescuentoPorVolumen implements Descuento {
+    private double porcentaje;
+    private double montoMinimo;
+
+    public DescuentoPorVolumen(double porcentaje, double montoMinimo) {
+        this.porcentaje = porcentaje;
+        this.montoMinimo = montoMinimo;
+    }
+
+    @Override
+    public double obtenerPorcentajeParaLinea(LineaFactura linea, List<LineaFactura> todasLasLineas) {
+        double totalCompra = 0.0;
+        for (LineaFactura l : todasLasLineas) {
+            totalCompra += l.calcularSubtotalTrasDescuentoLinea();
+        }
+        return (totalCompra >= montoMinimo) ? porcentaje : 0.0;
+    }
+}
+
+class DescuentoPorCategoria implements Descuento {
+    private double porcentaje;
+    private String categoriaObjetivo;
+
+    public DescuentoPorCategoria(double porcentaje, String categoriaObjetivo) {
+        this.porcentaje = porcentaje;
+        this.categoriaObjetivo = categoriaObjetivo;
+    }
+
+    @Override
+    public double obtenerPorcentajeParaLinea(LineaFactura linea, List<LineaFactura> todasLasLineas) {
+        return linea.getCategoriaHistorica().equalsIgnoreCase(categoriaObjetivo) ? porcentaje : 0.0;
+    }
+}
+
+class DescuentoCompuesto implements Descuento {
+    private List<Descuento> descuentos;
+
+    public DescuentoCompuesto(List<Descuento> descuentos) {
+        this.descuentos = descuentos;
+    }
+
+    @Override
+    public double obtenerPorcentajeParaLinea(LineaFactura linea, List<LineaFactura> todasLasLineas) {
+        double acumulado = 0.0;
+        for (Descuento d : descuentos) {
+            acumulado += d.obtenerPorcentajeParaLinea(linea, todasLasLineas);
+        }
+        return acumulado;
+    }
+}
+
+// ==========================================
+// 5. Factura (Soporta descuentos polimórficos)
+// ==========================================
+class Factura {
+    private String tipoComprobante;
+    private List<LineaFactura> lineas;
+    private Descuento descuentoGlobal;
+
+    public Factura(String tipoComprobante, Descuento descuentoGlobal) {
+        this.tipoComprobante = tipoComprobante;
+        this.lineas = new ArrayList<>();
+        this.descuentoGlobal = (descuentoGlobal != null) ? descuentoGlobal : new DescuentoNulo();
+    }
+
+    public LineaFactura agregarLinea(Producto producto, int cantidad, DescuentoLinea descuentoLinea) {
+        LineaFactura linea = new LineaFactura(producto, cantidad, descuentoLinea);
+        this.lineas.add(linea);
+        return linea;
+    }
+
+    public double calcularTotalNeto() {
+        double total = 0.0;
+        for (LineaFactura l : lineas) {
+            double pct = descuentoGlobal.obtenerPorcentajeParaLinea(l, lineas);
+            total += l.calcularSubtotalNetoFinal(pct);
+        }
+        return total;
+    }
+
+    public Map<Double, Double> obtenerIvaPorAlicuota() {
+        Map<Double, Double> resultado = new HashMap<>();
+        for (LineaFactura l : lineas) {
+            double pct = descuentoGlobal.obtenerPorcentajeParaLinea(l, lineas);
+            double iva = l.calcularMontoIva(pct);
+            double alicuota = l.getPorcentajeIvaHistorico();
+            resultado.put(alicuota, resultado.getOrDefault(alicuota, 0.0) + iva);
+        }
+        return resultado;
+    }
+
+    public double calcularTotalFinal() {
+        double totalIva = 0.0;
+        for (double montoIva : obtenerIvaPorAlicuota().values()) {
+            totalIva += montoIva;
+        }
+        return calcularTotalNeto() + totalIva;
+    }
+}
+
+// ==========================================
+// 6. Main de Prueba
+// ==========================================
+public class Main {
+    public static void main(String[] args) {
+        Producto lavandina = new Producto("Lavandina 1L", 1000.0, 0.21, "Limpieza");
+        Producto carne = new Producto("Carne Vacuna 1kg", 8000.0, 0.105, "Alimentos");
+
+        System.out.println("--- CASO 1: Descuento por Categoría (Alimentos 10%) ---");
+        Descuento descCat = new DescuentoPorCategoria(0.10, "Alimentos");
+        Factura f1 = new Factura("B", descCat);
+        f1.agregarLinea(lavandina, 2, null);
+        f1.agregarLinea(carne, 1, null);
+        System.out.printf("Total Factura 1: $%.2f%n%n", f1.calcularTotalFinal());
+
+        System.out.println("--- CASO 2: Descuento Compuesto (Volumen 15% + Categoría Alimentos 10%) ---");
+        Descuento descCompuesto = new DescuentoCompuesto(Arrays.asList(
+            new DescuentoPorVolumen(0.15, 5000.0),
+            new DescuentoPorCategoria(0.10, "Alimentos")
+        ));
+        Factura f2 = new Factura("B", descCompuesto);
+        f2.agregarLinea(lavandina, 3, new Descuento3x2()); // Promo 3x2 en la línea
+        f2.agregarLinea(carne, 1, null);
+        System.out.printf("Total Factura 2: $%.2f%n", f2.calcularTotalFinal());
+    }
+}
